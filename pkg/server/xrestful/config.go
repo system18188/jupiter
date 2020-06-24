@@ -1,36 +1,19 @@
-// Copyright 2020 Douyu
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package xrestful
 
 import (
 	"fmt"
-
 	"github.com/douyu/jupiter/pkg/conf"
 	"github.com/douyu/jupiter/pkg/ecode"
 	"github.com/douyu/jupiter/pkg/xlog"
-	"github.com/pkg/errors"
+	"github.com/juju/errors"
 )
 
-// HTTP config
+// Config HTTP config
 type Config struct {
 	Host          string
 	Port          int
-	Debug         bool
 	DisableMetric bool
 	DisableTrace  bool
-	EnableContentEncoding bool
 
 	SlowQueryThresholdInMilli int64
 
@@ -42,14 +25,12 @@ func DefaultConfig() *Config {
 	return &Config{
 		Host:                      "127.0.0.1",
 		Port:                      9091,
-		Debug:                     false,
-		EnableContentEncoding: 	   false,
 		SlowQueryThresholdInMilli: 500, // 500ms
-		logger:                    xlog.JupiterLogger.With(xlog.FieldMod("server.restful")),
+		logger:                    xlog.JupiterLogger.With(xlog.FieldMod("server.go-restful")),
 	}
 }
 
-// Jupiter Standard HTTP Server config
+// StdConfig Jupiter Standard HTTP Server config
 func StdConfig(name string) *Config {
 	return RawConfig("jupiter.server." + name)
 }
@@ -85,14 +66,14 @@ func (config *Config) WithPort(port int) *Config {
 // Build create server instance, then initialize it with necessary interceptor
 func (config *Config) Build() *Server {
 	server := newServer(config)
-	server.Use(config.recoverMiddleware())
+	server.Filter(recoverMiddleware(config.logger, config.SlowQueryThresholdInMilli))
 
 	if !config.DisableMetric {
-		server.Use(config.metricServerInterceptor())
+		server.Filter(metricServerInterceptor())
 	}
 
 	if !config.DisableTrace {
-		server.Use(config.traceServerInterceptor())
+		server.Filter(traceServerInterceptor())
 	}
 	return server
 }
