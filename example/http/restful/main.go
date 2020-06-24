@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/douyu/jupiter"
-	"github.com/douyu/jupiter/pkg/server/xrestful"
+	"github.com/system18188/jupiter/pkg/server/xrestful"
 	"github.com/douyu/jupiter/pkg/xlog"
 	"net/http"
 )
